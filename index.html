@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Odd or Even Checker (C to HTML/JS)</title>
+  <style>
+    /* Basic, clean styling */
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --accent: #0066cc;
+      --text: #17202a;
+      --muted: #52606d;
+      --success: #0b9d58;
+      --error: #d23f3f;
+      font-family: Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: linear-gradient(180deg, #eef3fb 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .container {
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      box-sizing: border-box;
+    }
+    .card {
+      width: 100%;
+      max-width: 540px;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 6px 24px rgba(11, 20, 30, 0.08);
+      padding: 28px;
+    }
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      letter-spacing: -0.2px;
+    }
+    p.lead {
+      margin: 0 0 20px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    label {
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    input[type="text"], input[type="number"] {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #dbe7f5;
+      font-size: 15px;
+      outline: none;
+      transition: box-shadow .12s, border-color .12s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 6px 18px rgba(0,102,204,0.08);
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    button:active { transform: translateY(1px); }
+    .output {
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: #f8fbff;
+      border: 1px solid #e6f0ff;
+      color: var(--muted);
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+    .ok { color: var(--success); }
+    .bad { color: var(--error); }
+    .small {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    footer {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    code.snippet {
+      background: #0b1b2b;
+      color: #e6f6ff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card" role="main">
+      <h1>Odd or Even Checker</h1>
+
+      <!-- Form to mimic prompt and scanf -->
+      <form id="parityForm" aria-label="Enter a number">
+        <div class="row">
+          <label for="numberInput">Enter a number:</label>
+          <input id="numberInput" name="number" type="text" inputmode="numeric" autocomplete="off"
+                 aria-label="Number input" placeholder="e.g. 42" />
+          <button type="submit" id="checkBtn">Check</button>
+        </div>
+      </form>
+
+      <div id="result" class="output" role="status" aria-live="polite">
+        Waiting for input...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * checkParity - reads the user input, parses it as integer (like scanf("%d")),
+     *              and returns one of the original C strings:
+     *                "It's odd number." or "It's even number."
+     *
+     * Behavior mimics: n%2? printf("It's odd number.") : printf("It's even number.");
+     *
+     * This function fully implements the logic and handles invalid input.
+     */
+    function checkParity(raw) {
+      // Mimic C's scanf("%d", &n) behavior using parseInt(base 10).
+      // parseInt will return NaN for non-numeric inputs. For strings like "12abc", parseInt("12abc") === 12,
+      // which is similar to how scanf stops at the first non-digit.
+      const parsed = parseInt(raw, 10);
+
+      if (Number.isNaN(parsed)) {
+        return {
+          ok: false,
+          message: "Invalid input. Please enter an integer.",
+          cssClass: "bad"
+        };
+      }
+
+      // Use the exact ternary logic translated from C:
+      // In C: n%2 ? "It's odd number." : "It's even number."
+      // In JS, n % 2 produces 0 for even, non-zero (often 1 or -1) for odd.
+      const text = (parsed % 2) ? "It's odd number." : "It's even number.";
+
+      return {
+        ok: true,
+        message: text,
+        cssClass: "ok"
+      };
+    }
+
+    // DOM wiring
+    (function () {
+      const form = document.getElementById('parityForm');
+      const input = document.getElementById('numberInput');
+      const result = document.getElementById('result');
+
+      function show(res) {
+        result.textContent = res.message;
+        result.classList.toggle('ok', res.ok);
+        result.classList.toggle('bad', !res.ok);
+      }
+
+      // Initialize
+      show({ ok: true, message: "Waiting for input..." });
+
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        const raw = input.value.trim();
+
+        // If empty, mimic the C program which would block waiting for input —
+        // here we simply prompt the user to enter a number.
+        if (raw === "") {
+          show({ ok: false, message: "Invalid input. Please enter an integer.", cssClass: "bad" });
+          input.focus();
+          return;
+        }
+
+        const res = checkParity(raw);
+        show(res);
+      });
+
+      // Allow pressing Enter inside the input to submit
+      input.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          form.requestSubmit();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
